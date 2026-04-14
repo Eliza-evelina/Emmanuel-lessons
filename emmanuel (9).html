@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Emmanuel · Lessons</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#F2F1EC;--card:#FFF;--border:#E4E2DA;--text:#1A1917;--muted:#9A9589;--soft:#F8F7F3;
+  --green:#1E6B45;--green-bg:#E4F4EC;--green-border:#A3D9BC;
+  --red:#B91C1C;--red-bg:#FEF2F2;--red-border:#FECACA;
+  --orange:#C2410C;--orange-bg:#FFF7ED;--orange-border:#FED7AA;
+  --col-blue:#3B82F6;--col-teal:#0D9488;--col-purple:#7C3AED;
+  --col-coral:#F97316;--col-amber:#D97706;--col-green:#16A34A;
+  --col-pink:#EC4899;--col-gray:#6B7280;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;max-width:480px;margin:0 auto}
+.header{background:var(--card);padding:16px 16px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.header-name{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.week-nav{display:flex;align-items:center;gap:8px}
+.week-nav button{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--soft);color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.week-label{font-size:13px;font-weight:500}
+.tz-bar{display:flex;gap:4px;align-items:center}
+.tz-lbl{font-size:11px;color:var(--muted);margin-right:3px}
+.tz-btn{padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:500;cursor:pointer}
+.tz-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-bottom:1px solid var(--border);margin-bottom:14px}
+.sum-item{background:var(--card);padding:10px 6px;text-align:center}
+.sum-val{font-size:20px;font-weight:600;line-height:1.1}
+.sum-val.green{color:var(--green)}
+.sum-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.content{padding:0 12px}
+.day-group{margin-bottom:16px}
+.day-heading{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:0 4px 6px}
+.day-heading.today{color:var(--green)}
+.lesson{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:7px;position:relative;overflow:hidden}
+.lesson::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.lesson.done{background:var(--green-bg);border-color:var(--green-border)}
+.lesson.cancelled{background:var(--red-bg);border-color:var(--red-border);opacity:.7}
+.lesson.rescheduled{background:var(--orange-bg);border-color:var(--orange-border)}
+.lesson.c-blue::before{background:var(--col-blue)}.lesson.c-teal::before{background:var(--col-teal)}
+.lesson.c-purple::before{background:var(--col-purple)}.lesson.c-coral::before{background:var(--col-coral)}
+.lesson.c-amber::before{background:var(--col-amber)}.lesson.c-green::before{background:var(--col-green)}
+.lesson.c-pink::before{background:var(--col-pink)}.lesson.c-gray::before{background:var(--col-gray)}
+.lesson-info{flex:1;min-width:0;padding-left:8px}
+.lesson-name{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lesson.done .lesson-name{text-decoration:line-through;color:var(--muted)}
+.lesson.cancelled .lesson-name{text-decoration:line-through;color:var(--red)}
+.lesson-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.lesson-badge{display:inline-block;font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;margin-top:4px}
+.badge-done{background:var(--green-bg);color:var(--green)}
+.badge-cancelled{background:var(--red-bg);color:var(--red)}
+.badge-rescheduled{background:var(--orange-bg);color:var(--orange)}
+.lesson-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.lesson-earn{font-size:13px;font-weight:600;color:var(--green)}
+.lesson.done .lesson-earn,.lesson.cancelled .lesson-earn{color:var(--muted)}
+.done-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:var(--soft);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
+.done-btn:active{transform:scale(.88)}
+.done-btn.checked{background:var(--green);border-color:var(--green)}
+.done-btn svg{display:block;pointer-events:none}
+.more-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:16px;flex-shrink:0;font-family:'Inter',sans-serif}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.sheet-bg.hidden{display:none}
+.sheet{background:var(--card);border-radius:20px 20px 0 0;padding:8px 0 34px;width:100%;max-width:480px}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:4px;margin:8px auto 16px}
+.sheet-title{font-size:13px;font-weight:600;color:var(--muted);padding:0 20px 10px;text-transform:uppercase;letter-spacing:.08em}
+.sheet-action{display:flex;align-items:center;gap:14px;padding:13px 20px;cursor:pointer;font-size:15px;font-weight:500}
+.sheet-action:active{background:var(--soft)}
+.sheet-action.danger{color:var(--red)}
+.sheet-action.warn{color:var(--orange)}
+.sheet-sep{height:1px;background:var(--border);margin:4px 0}
+.rform{padding:12px 20px 0;display:none}
+.rform.show{display:block}
+.rform label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+.day-picker{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.dpb{flex:1;min-width:36px;padding:7px 4px;border:1px solid var(--border);border-radius:8px;background:var(--soft);color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;text-align:center}
+.dpb.sel{background:var(--text);color:#fff;border-color:var(--text)}
+.rform input[type=time]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:'Inter',sans-serif;font-size:15px;background:var(--soft);color:var(--text);margin-top:8px}
+.rform .cbtn{margin-top:10px;width:100%;padding:12px;background:var(--text);color:#fff;border:none;border-radius:12px;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer}
+.undo-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1A1917;color:#fff;border-radius:30px;padding:10px 16px;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:500;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:opacity .3s;white-space:nowrap}
+.undo-bar.hidden{opacity:0;pointer-events:none}
+.undo-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.state-msg{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;line-height:1.8}
+.spinner{width:26px;height:26px;border:2.5px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.next-banner{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px}
+.next-banner.hidden{display:none}
+.next-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--green)}
+.next-info{flex:1;min-width:0}
+.next-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:2px}
+.next-name{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.next-time{font-size:12px;color:var(--muted);margin-top:1px}
+.next-soon{font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:8px;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="header-name">Emmanuel · Lessons</span>
+    <div class="week-nav">
+      <button id="prevWeek">&#8592;</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button id="nextWeek">&#8594;</button>
+    </div>
+  </div>
+  <div class="tz-bar">
+    <span class="tz-lbl">Time zone:</span>
+    <button class="tz-btn" data-offset="2">🇪🇺 EU</button>
+    <button class="tz-btn active" data-offset="1">🇳🇬 NG</button>
+    <button class="tz-btn" data-offset="3">🇺🇦 UA</button>
+  </div>
+</div>
+
+<div class="next-banner hidden" id="nextBanner">
+  <div class="next-dot" id="nextDot"></div>
+  <div class="next-info">
+    <div class="next-label">Next lesson</div>
+    <div class="next-name" id="nextName"></div>
+    <div class="next-time" id="nextTime"></div>
+  </div>
+  <div class="next-soon" id="nextSoon"></div>
+</div>
+
+<div class="summary">
+  <div class="sum-item"><div class="sum-val" id="sDone">—</div><div class="sum-lbl">Done</div></div>
+  <div class="sum-item"><div class="sum-val" id="sLeft">—</div><div class="sum-lbl">Left</div></div>
+  <div class="sum-item"><div class="sum-val green" id="sPay">—</div><div class="sum-lbl">Earned ₴</div></div>
+</div>
+
+<div class="content" id="content">
+  <div class="state-msg"><div class="spinner"></div>Loading...</div>
+</div>
+
+<div class="sheet-bg hidden" id="sheetBg">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetTitle"></div>
+    <div id="sheetActions"></div>
+    <div class="rform" id="rform">
+      <label>New day</label>
+      <div class="day-picker">
+        <button class="dpb" data-day="Mon">Mon</button>
+        <button class="dpb" data-day="Tue">Tue</button>
+        <button class="dpb" data-day="Wed">Wed</button>
+        <button class="dpb" data-day="Thu">Thu</button>
+        <button class="dpb" data-day="Fri">Fri</button>
+        <button class="dpb" data-day="Sat">Sat</button>
+        <button class="dpb" data-day="Sun">Sun</button>
+      </div>
+      <label>New time</label>
+      <input type="time" id="newTime"/>
+      <button class="cbtn" id="confirmBtn">Confirm reschedule</button>
+    </div>
+  </div>
+</div>
+
+<div class="undo-bar hidden" id="undoBar">
+  <span id="undoText"></span>
+  <button class="undo-btn" id="undoBtn">Undo</button>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbynxZWpUux46rR-WRSQOaXuzl0IxfwSDS2K4Se_61iSuhVBgahisKzkEQ9XqwjZmtqlHg/exec';
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAY_FULL = {Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'};
+
+let lessons = [], tzOffset = 1, weekOffset = 0;
+let undoTimer = null, undoRow = null;
+let sheetRow = null, selDay = null;
+
+// ── UTILS ──
+function weekLabel(off) {
+  const now = new Date(), d = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + (d===0?-6:1-d) + off*7);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  const f = x => x.getDate()+' '+x.toLocaleDateString('en-GB',{month:'short'});
+  return f(mon)+' – '+f(sun);
+}
+function todayDay() { const d=new Date().getDay(); return DAYS[d===0?6:d-1]; }
+function shift(t, from, to) {
+  if (!t) return '—';
+  const m = String(t).trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return String(t);
+  let mins = (+m[1])*60+(+m[2]) - from*60 + to*60;
+  mins = ((mins%1440)+1440)%1440;
+  return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
+}
+function dur(min) {
+  const m=+min; if(m<60)return m+' min'; if(m%60===0)return (m/60)+' hr';
+  return Math.floor(m/60)+'h '+(m%60)+'m';
+}
+
+// ── API ──
+async function api(payload) {
+  console.log('API call:', JSON.stringify(payload));
+  try {
+    const r = await fetch(API_URL, {
+      method:'POST',
+      body: JSON.stringify(payload),
+      headers:{'Content-Type':'text/plain'}
+    });
+    const data = await r.json();
+    console.log('API response:', JSON.stringify(data));
+    return data;
+  } catch(e) {
+    console.error('API error:', e);
+    return {status:'error'};
+  }
+}
+
+// ── RENDER ──
+function renderSummary() {
+  const done = lessons.filter(l=>l.status==='Yes').length;
+  const left = lessons.filter(l=>l.status==='No').length;
+  const earned = lessons.filter(l=>l.status==='Yes').reduce((s,l)=>s+Number(l.amount),0);
+  document.getElementById('sDone').textContent = done;
+  document.getElementById('sLeft').textContent = left;
+  document.getElementById('sPay').textContent = earned.toLocaleString('uk-UA');
+}
+
+function renderLessons() {
+  document.getElementById('weekLabel').textContent = weekLabel(weekOffset);
+  const content = document.getElementById('content');
+  if (!lessons.length) { content.innerHTML='<div class="state-msg">No lessons this week.</div>'; renderSummary(); return; }
+
+  const today = todayDay();
+  const grouped = {}; DAYS.forEach(d=>grouped[d]=[]);
+  lessons.forEach(l=>{ if(grouped[l.day]!==undefined) grouped[l.day].push(l); });
+
+  let html = '';
+  DAYS.forEach(day => {
+    const items = grouped[day]; if(!items.length) return;
+    items.sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+    const isToday = day===today && weekOffset===0;
+    html += `<div class="day-group"><div class="day-heading${isToday?' today':''}">${DAY_FULL[day]}${isToday?' · Today':''}</div>`;
+    items.forEach(l => {
+      const t = shift(l.time, 2, tzOffset);
+      const color = (l.color||'gray').toLowerCase();
+      const sc = l.status==='Yes'?' done':l.status==='Cancelled'?' cancelled':l.status==='Rescheduled'?' rescheduled':'';
+      let badge = '';
+      if(l.status==='Yes') badge='<span class="lesson-badge badge-done">Done</span>';
+      if(l.status==='Cancelled') badge='<span class="lesson-badge badge-cancelled">Cancelled</span>';
+      if(l.status==='Rescheduled') badge=`<span class="lesson-badge badge-rescheduled">→ ${l.note||'Rescheduled'}</span>`;
+      const chk = l.status==='Yes'
+        ? `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polyline points="2.5,8 6,11.5 13.5,4.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+        : `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polyline points="2.5,8 6,11.5 13.5,4.5" stroke="#C0BDB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      html += `<div class="lesson c-${color}${sc}">
+        <div class="lesson-info">
+          <div class="lesson-name">${l.name}</div>
+          <div class="lesson-meta">${t} · ${dur(l.duration)}</div>
+          ${badge}
+        </div>
+        <div class="lesson-right">
+          <div class="lesson-earn">${Number(l.amount).toLocaleString('uk-UA')} ₴</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="more-btn" data-row="${l.row}">···</button>
+            <button class="done-btn${l.status==='Yes'?' checked':''}" data-row="${l.row}">${chk}</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  content.innerHTML = html;
+  content.querySelectorAll('.done-btn').forEach(b => b.addEventListener('click', ()=>handleDone(+b.dataset.row)));
+  content.querySelectorAll('.more-btn').forEach(b => b.addEventListener('click', ()=>openSheet(+b.dataset.row)));
+  renderSummary();
+}
+
+// ── DONE / UNDO ──
+async function handleDone(row) {
+  const l = lessons.find(x=>x.row===row); if(!l) return;
+  const btn = document.querySelector(`.done-btn[data-row="${row}"]`);
+  if(btn){ btn.disabled=true; btn.style.opacity='0.5'; }
+
+  if (l.status==='Yes') {
+    const res = await api({row, action:'undo'});
+    if(res&&res.status==='ok'){ l.status='No'; hideUndo(); renderLessons(); }
+    else { if(btn){btn.disabled=false;btn.style.opacity='1';} alert('Could not save.'); }
+  } else {
+    const res = await api({row, action:'done'});
+    if(res&&res.status==='ok'){ l.status='Yes'; renderLessons(); showUndo(row,l.name); }
+    else { if(btn){btn.disabled=false;btn.style.opacity='1';} alert('Could not save.'); }
+  }
+}
+
+function showUndo(row, name) {
+  undoRow=row; clearTimeout(undoTimer);
+  document.getElementById('undoText').textContent=`"${name}" marked done`;
+  document.getElementById('undoBar').classList.remove('hidden');
+  undoTimer=setTimeout(hideUndo,5000);
+}
+function hideUndo() {
+  document.getElementById('undoBar').classList.add('hidden');
+  clearTimeout(undoTimer); undoRow=null;
+}
+document.getElementById('undoBtn').addEventListener('click', async ()=>{
+  if(undoRow===null) return;
+  const row=undoRow, l=lessons.find(x=>x.row===row);
+  hideUndo();
+  if(l){ l.status='No'; renderLessons(); }
+  await api({row, action:'undo'});
+});
+
+// ── SHEET ──
+function openSheet(row) {
+  const l = lessons.find(x=>x.row===row); if(!l) return;
+  sheetRow=row; selDay=l.day;
+
+  document.getElementById('sheetTitle').textContent=l.name;
+  document.getElementById('rform').classList.remove('show');
+
+  // Reset day picker
+  document.querySelectorAll('.dpb').forEach(b=>{
+    b.classList.toggle('sel', b.dataset.day===l.day);
+  });
+  document.getElementById('newTime').value = shift(l.time,2,tzOffset);
+
+  let html='';
+  if(l.status!=='Yes') html+=`<div class="sheet-action" id="saDone">✓ &nbsp; Mark as done</div>`;
+  if(l.status==='Yes') html+=`<div class="sheet-action" id="saUndo">↩ &nbsp; Undo — not done yet</div>`;
+  html+=`<div class="sheet-sep"></div>
+    <div class="sheet-action warn" id="saResc">📅 &nbsp; Reschedule</div>
+    <div class="sheet-action danger" id="saCancel">✕ &nbsp; Cancel this lesson</div>`;
+
+  document.getElementById('sheetActions').innerHTML=html;
+  document.getElementById('sheetBg').classList.remove('hidden');
+
+  document.getElementById('saDone')&&document.getElementById('saDone').addEventListener('click',async()=>{
+    closeSheet();
+    const res=await api({row,action:'done'});
+    if(res&&res.status==='ok'){ l.status='Yes'; renderLessons(); showUndo(row,l.name); }
+    else alert('Could not save.');
+  });
+  document.getElementById('saUndo')&&document.getElementById('saUndo').addEventListener('click',async()=>{
+    closeSheet();
+    const res=await api({row,action:'undo'});
+    if(res&&res.status==='ok'){ l.status='No'; renderLessons(); }
+    else alert('Could not save.');
+  });
+  document.getElementById('saResc').addEventListener('click',()=>{
+    document.getElementById('sheetActions').style.display='none';
+    document.getElementById('rform').classList.add('show');
+  });
+  document.getElementById('saCancel').addEventListener('click',async()=>{
+    closeSheet();
+    const res=await api({row,action:'cancel',note:'Cancelled by teacher'});
+    if(res&&res.status==='ok'){ l.status='Cancelled'; l.note=''; renderLessons(); }
+    else alert('Could not save.');
+  });
+}
+
+function closeSheet() {
+  document.getElementById('sheetBg').classList.add('hidden');
+  document.getElementById('sheetActions').style.display='';
+  document.getElementById('rform').classList.remove('show');
+  sheetRow=null;
+}
+document.getElementById('sheetBg').addEventListener('click',e=>{ if(e.target===document.getElementById('sheetBg')) closeSheet(); });
+
+// Day picker
+document.querySelectorAll('.dpb').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.dpb').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel'); selDay=b.dataset.day;
+  });
+});
+
+// Confirm reschedule — ONE listener only
+document.getElementById('confirmBtn').addEventListener('click', async ()=>{
+  const newTime = document.getElementById('newTime').value;
+  if(!newTime||!selDay){ alert('Select day and time.'); return; }
+  const row=sheetRow;
+  const l=lessons.find(x=>x.row===row);
+  const newTimeWarsaw=shift(newTime,tzOffset,2);
+  const note=selDay+' '+newTime;
+
+  // Disable button while waiting
+  const btn=document.getElementById('confirmBtn');
+  btn.disabled=true; btn.textContent='Saving...';
+
+  // Send day and time separately, wait for server confirmation
+  const res = await api({row, action:'reschedule', note, day:selDay, time:newTimeWarsaw});
+  console.log('Reschedule result:', res);
+
+  if(res&&res.status==='ok'){
+    if(l){ l.status='Rescheduled'; l.note=note; l.day=selDay; l.time=newTimeWarsaw; }
+    closeSheet();
+    renderLessons();
+  } else {
+    btn.disabled=false; btn.textContent='Confirm reschedule';
+    alert('Could not save. Please try again.');
+  }
+});
+
+// ── NEXT LESSON BANNER ──
+function updateNextBanner() {
+  if (weekOffset !== 0) { document.getElementById('nextBanner').classList.add('hidden'); return; }
+  const now = new Date();
+  const todayIdx = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const DAYS_IDX = {Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};
+
+  // Find next upcoming lesson today or later this week
+  const upcoming = lessons
+    .filter(l => l.status === 'No' || l.status === 'Rescheduled')
+    .map(l => {
+      const dayIdx = DAYS_IDX[l.day] ?? -1;
+      const timeParts = String(l.time).match(/^(\d{1,2}):(\d{2})$/);
+      if (!timeParts || dayIdx < 0) return null;
+      const lessonMins = +timeParts[1] * 60 + +timeParts[2];
+      // minutes from now (Warsaw stored, show in tzOffset)
+      const displayMins = ((lessonMins - 2*60 + tzOffset*60) % 1440 + 1440) % 1440;
+      const displayH = Math.floor(displayMins/60), displayM = displayMins%60;
+      const daysFromToday = dayIdx - todayIdx;
+      const totalMinsFromNow = daysFromToday * 1440 + displayMins - nowMins;
+      return { ...l, displayMins, displayH, displayM, daysFromToday, totalMinsFromNow };
+    })
+    .filter(l => l && l.totalMinsFromNow > -30) // include lessons started up to 30min ago
+    .sort((a,b) => a.totalMinsFromNow - b.totalMinsFromNow);
+
+  if (!upcoming.length) { document.getElementById('nextBanner').classList.add('hidden'); return; }
+
+  const next = upcoming[0];
+  const timeStr = String(next.displayH).padStart(2,'0') + ':' + String(next.displayM).padStart(2,'0');
+  const mins = Math.round(next.totalMinsFromNow);
+
+  let soonText = '';
+  if (mins <= 0) soonText = 'Now';
+  else if (mins < 60) soonText = 'In ' + mins + ' min';
+  else if (mins < 1440) soonText = 'In ' + Math.round(mins/60) + ' hr';
+  else soonText = next.day;
+
+  // Color dot
+  const COLORS = {blue:'#3B82F6',teal:'#0D9488',purple:'#7C3AED',coral:'#F97316',amber:'#D97706',green:'#16A34A',pink:'#EC4899',gray:'#6B7280'};
+  const dotColor = COLORS[(next.color||'gray').toLowerCase()] || '#6B7280';
+  document.getElementById('nextDot').style.background = dotColor;
+  document.getElementById('nextName').textContent = next.name;
+  document.getElementById('nextTime').textContent = timeStr + ' · ' + dur(next.duration);
+  document.getElementById('nextSoon').textContent = soonText;
+  document.getElementById('nextSoon').style.color = mins <= 15 ? '#B91C1C' : 'var(--green)';
+  document.getElementById('nextSoon').style.background = mins <= 15 ? '#FEF2F2' : 'var(--green-bg)';
+  document.getElementById('nextBanner').classList.remove('hidden');
+}
+
+// ── LOAD ──
+async function load() {
+  document.getElementById('content').innerHTML='<div class="state-msg"><div class="spinner"></div>Loading...</div>';
+  try {
+    const r=await fetch(API_URL);
+    const data=await r.json();
+    lessons=data.lessons||[];
+    renderLessons();
+    updateNextBanner();
+  } catch(e) {
+    document.getElementById('content').innerHTML='<div class="state-msg">Could not load.<br>Check your connection.</div>';
+  }
+}
+
+document.getElementById('prevWeek').addEventListener('click',()=>{weekOffset--;renderLessons();});
+document.getElementById('nextWeek').addEventListener('click',()=>{weekOffset++;renderLessons();});
+document.querySelectorAll('.tz-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.tz-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); tzOffset=+b.dataset.offset; renderLessons(); updateNextBanner();
+  });
+});
+
+document.getElementById('weekLabel').textContent=weekLabel(0);
+load();
+</script>
+</body>
+</html>
