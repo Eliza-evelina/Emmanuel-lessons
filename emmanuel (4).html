@@ -324,12 +324,44 @@ async function handleDone(row) {
   renderLessons();
 }
 
+// ── global reschedule state ──
+let rescheduleRow = null;
+let selectedDay = null;
+
+function initSheetListeners() {
+  // Day picker
+  document.querySelectorAll('.day-pick-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.day-pick-btn').forEach(x => x.classList.remove('selected'));
+      b.classList.add('selected');
+      selectedDay = b.dataset.day;
+    });
+  });
+
+  // Confirm reschedule — single listener
+  document.getElementById('confirmReschedule').addEventListener('click', async () => {
+    const newTime = document.getElementById('newTimeInput').value;
+    if (!newTime || !selectedDay) { alert('Please select a day and time.'); return; }
+    const row = rescheduleRow;
+    closeSheet();
+    const newTimeWarsaw = shiftTime(newTime, tzOffset, 2);
+    const note = selectedDay + ' ' + newTime;
+    await callApi({ row, action: 'reschedule', note });
+    const l = lessons.find(x => x.row === row);
+    if (l) { l.status = 'Rescheduled'; l.note = note; l.day = selectedDay; l.time = newTimeWarsaw; }
+    renderLessons();
+  });
+}
+
 function openSheet(row) {
   activeRow = row;
+  rescheduleRow = row;
   const lesson = lessons.find(l => l.row === row);
   if (!lesson) return;
+
   document.getElementById('sheetTitle').textContent = lesson.name;
   document.getElementById('rescheduleForm').classList.add('hidden');
+  document.getElementById('sheetActions').style.display = '';
 
   let html = '';
   if (lesson.status !== 'Yes') {
@@ -357,6 +389,13 @@ function openSheet(row) {
   document.getElementById('sheetActions').innerHTML = html;
   document.getElementById('sheetBg').classList.remove('hidden');
 
+  // Pre-fill reschedule form with current lesson values
+  selectedDay = lesson.day;
+  document.querySelectorAll('.day-pick-btn').forEach(x => x.classList.remove('selected'));
+  const preBtn = document.querySelector(`.day-pick-btn[data-day="${lesson.day}"]`);
+  if (preBtn) preBtn.classList.add('selected');
+  document.getElementById('newTimeInput').value = shiftTime(lesson.time, 2, tzOffset);
+
   document.getElementById('saDone') && document.getElementById('saDone').addEventListener('click', async () => {
     closeSheet();
     await callApi({ row, action: 'done' });
@@ -380,39 +419,6 @@ function openSheet(row) {
     await callApi({ row, action: 'cancel', note: 'Cancelled by teacher' });
     const l = lessons.find(x => x.row === row);
     if (l) { l.status = 'Cancelled'; l.note = ''; }
-    renderLessons();
-  });
-
-  // Day picker selection
-  let selectedDay = null;
-  document.querySelectorAll('.day-pick-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('.day-pick-btn').forEach(x => x.classList.remove('selected'));
-      b.classList.add('selected');
-      selectedDay = b.dataset.day;
-    });
-  });
-  // Pre-select current day of this lesson
-  const curLesson = lessons.find(x => x.row === row);
-  if (curLesson) {
-    selectedDay = curLesson.day;
-    const preBtn = document.querySelector(`.day-pick-btn[data-day="${curLesson.day}"]`);
-    if (preBtn) preBtn.classList.add('selected');
-    document.getElementById('newTimeInput').value = shiftTime(curLesson.time, 2, tzOffset);
-  }
-
-  document.getElementById('confirmReschedule').addEventListener('click', async () => {
-    const newTime = document.getElementById('newTimeInput').value;
-    if (!newTime || !selectedDay) {
-      alert('Please select a day and time.');
-      return;
-    }
-    closeSheet();
-    const newTimeWarsaw = shiftTime(newTime, tzOffset, 2);
-    const note = selectedDay + ' ' + newTime;
-    await callApi({ row, action: 'reschedule', note });
-    const l = lessons.find(x => x.row === row);
-    if (l) { l.status = 'Rescheduled'; l.note = note; l.day = selectedDay; l.time = newTimeWarsaw; }
     renderLessons();
   });
 }
@@ -487,6 +493,7 @@ document.querySelectorAll('.tz-btn').forEach(btn => {
 });
 
 document.getElementById('weekLabel').textContent = getWeekLabel(0);
+initSheetListeners();
 loadLessons();
 </script>
 </body>
